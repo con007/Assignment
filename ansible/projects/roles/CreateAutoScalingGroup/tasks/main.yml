@@ -1,0 +1,16 @@
+- name: CreateAutoScalingGroup
+  ec2_asg:
+    name: ASG-3
+    region: us-east-2
+    load_balancers: MyELB2
+    availability_zones: ['us-east-2c']
+    launch_config_name: MyLaunch2
+    min_size: 2 
+    max_size: 2
+    desired_capacity: 2
+    replace_all_instances: yes
+    vpc_zone_identifier: ['subnet-1c73ea50']
+    tags:
+      - type: ASG_web_server
+    wait_for_instances: yes
+

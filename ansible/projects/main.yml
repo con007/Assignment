@@ -1,0 +1,36 @@
+---
+  - name: create_ec2_lc
+    hosts: local
+    connection: local
+    gather_facts: yes
+    roles:
+      - CreateLC
+
+  - name: createTG1
+    hosts: local
+    connection: local
+    gather_facts: yes
+    roles:
+      - CreateLC
+  
+  - name: createTG2
+    hosts: local
+    connection: local
+    gather_facts: yes
+    roles:
+      - CreateLC
+
+  - name: creating_elb
+    hosts: local
+    connection: local
+    gather_facts: yes
+    roles:
+      - CreateLC
+
+  - name: CreateAutoScalingGroup
+    hosts: local
+    connection: local
+    gather_facts: yes
+    roles:
+      - CreateAutoScalingGroup
+ 

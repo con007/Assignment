@@ -1,0 +1,87 @@
+- name: create_ec2_lc
+  ec2_lc:
+    name: MyLaunch2
+    image_id: "{{ image_id }}"
+    instance_profile_name: Admin 
+    instance_type: t2.micro
+    key_name: hello
+    security_groups: ['default']
+    region: us-east-2
+
+- name: createTG1
+  elb_target_group:
+    name: mytargetgroup
+    protocol: http
+    region: us-east-2
+    port: 80
+    vpc_id: vpc-df9d4eb4
+    health_check_path: /hi*
+    successful_response_codes: "200,250-260"
+    state: present
+
+- name: createTG2
+  elb_target_group:
+    name: mytargetgroup2
+    protocol: http
+    port: 80
+    region: us-east-2
+    vpc_id: vpc-df9d4eb4
+    health_check_path: /by*
+    successful_response_codes: "200,250-260"
+    state: present   
+
+
+- name: creating_elb
+  ec2_elb_lb: 
+    name: MyELB2
+    state: present
+    region: us-east-2
+    cross_az_load_balancing: yes
+    listeners:
+      - protocol: http
+        load_balancer_port: 80
+        instance_port: 80
+      - protocol: http
+        load_balancer_port: 25
+        instance_protocol: http # optional, defaults to value of protocol setting
+        instance_port: 25
+        #   ssl certificate required for https or ssl
+        #ssl_certificate_id: "arn:aws:iam::192524788944:server-certificate/company/servercerts/ProdServerCert"
+    tags:
+      name: MyELB2
+    security_group_ids: sg-0af7268a68e32eec3
+    zones: us-east-2c
+    health_check:
+      ping_protocol: http
+      ping_port: 80
+      ping_path: "/index.html"
+      response_timeout: 5
+      interval: 30
+      unhealthy_threshold: 2
+      healthy_threshold: 2
+    health_check:
+      ping_protocol: http
+      ping_port: 25
+      ping_path: "/"
+      response_timeout: 5
+      interval: 30
+      unhealthy_threshold: 2
+      healthy_threshold: 2
+
+- name: creating_elb
+  elb_application_lb:
+    name: test-alb
+    subnets:
+      - subnet-1b8a7170
+      - subnet-1c73ea50
+      - subnet-350a3b4f
+    security_groups: ['default']
+    region: us-east-2
+    scheme: internet-facing
+    listeners:
+      - Protocol: HTTP
+        Port: 80
+        DefaultActions:
+          - Type: forward
+            TargetGroupName: mytargetgroup
+    state: present

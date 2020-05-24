@@ -1,0 +1,77 @@
+- name: Create Auto Scaling Group
+  ec2_asg:
+    region: "us-east-2"
+    name: "ASG-1"
+    launch_config_name: "lc-1"
+    availability_zones: "us-east-2"
+    health_check_type: EC2
+    health_check_period: 300
+    desired_capacity: 2
+    replace_all_instances: yes
+    min_size: 2
+    max_size: 5
+    tags:
+     - Name: "ASG-1"
+   load_balancers:
+      - master: "ApplicationLoadBalancer"
+    state: present
+  register: asg_result
+
+
+- name: Configure Scaling Policies
+  ec2_scaling_policy:
+    region: "us-east-2"
+    name: "SP-1"
+    asg_name: "ASG-1"
+    state: present
+    adjustment_type: "{{ item.adjustment_type }}"
+    min_adjustment_step: "{{ item.min_adjustment_step }}"
+    scaling_adjustment: "{{ item.scaling_adjustment }}"
+    cooldown: "{{ item.cooldown }}"
+  with_items:
+    - name: "Increase Group Size"
+      adjustment_type: "ChangeInCapacity"
+      scaling_adjustment: +1
+      min_adjustment_step: 1
+      cooldown: 180
+    - name: "Decrease Group Size"
+      adjustment_type: "ChangeInCapacity"
+      scaling_adjustment: -1
+      min_adjustment_step: 1
+      cooldown: 300
+  register: sp_result
+
+- name: Determine Metric Alarm configuration
+  set_fact:
+    metric_alarms:
+      - name: "{{ asg_result.name }}-ScaleUp"
+        comparison: ">="
+        threshold: 50.0
+        alarm_actions:
+          - "{{ sp_result.results[0].arn }}"
+      - name: "{{ asg_result.name }}-ScaleDown"
+        comparison: "<="
+        threshold: 20.0
+        alarm_actions:
+          - "{{ sp_result.results[1].arn }}"
+
+- name: Configure Metric Alarms and link to Scaling Policies
+  ec2_metric_alarm:
+    region: "{{ region }}"
+    name: "{{ item.name }}"
+    state: present
+    metric: "CPUUtilization"
+    namespace: "AWS/EC2"
+    statistic: "Average"
+    comparison: "{{ item.comparison }}"
+    threshold: "{{ item.threshold }}"
+    period: 60
+    evaluation_periods: 5
+    unit: "Percent"
+    dimensions:
+      AutoScalingGroupName: "{{ asg_result.name }}"
+    alarm_actions: "{{ item.alarm_actions }}"
+  with_items: metric_alarms
+  wh
+en: "{{ asg_result.max_size }} > 1"
+
