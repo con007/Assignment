@@ -26,3 +26,5 @@ Create a script using any preferred programming language (python,Node.js, java e
 
 I create python script
 
+**WE CAN CREATE THIS ASSIGNMENT MORE EFFICIENT BY DOING SOME CHANGES**
+
